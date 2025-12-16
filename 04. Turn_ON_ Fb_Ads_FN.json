@@ -1,0 +1,350 @@
+{
+  "name": "04. Turn_ON_ Fb_Ads_FN",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        1136
+      ],
+      "id": "7066d257-24cd-404b-9527-ef133a5cdbe6",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3acae58a-6d3c-4db5-a1aa-edf9cd88181b",
+              "name": "access_token",
+              "value": "EAATostwKkxMBQKqLOPRtu9S0G1mw2e0qk6buF1ABoBN55kZCPIakYokDJI2eAWJvFzzWXYZCTZBbAAosCyp2fOTbmQHOM62Mt1TcqTiHzmk96s6x9KZBEqwFvnzZC4J2roZC3ziZAoOZAMbV4LBhnC1Ol3miZBYlfl75a47XwNgV0v6NBXnCiUQEK7hXWDPD06ypWvaCZBNQGjzSFUY87sTr9K",
+              "type": "string"
+            },
+            {
+              "id": "1dda0de4-888e-4d16-9892-0491110769e8",
+              "name": "Nguong_CPA",
+              "value": 50000,
+              "type": "number"
+            },
+            {
+              "id": "e06e933a-425d-4633-ac53-f70f7a04aec1",
+              "name": "Cam_Chi_Tieu_Nguong_Tren",
+              "value": 3500000,
+              "type": "number"
+            },
+            {
+              "id": "fa677240-82bc-4d7f-8920-075213b9bdf2",
+              "name": "Cam_Chi_Tieu_Nguong_Duoi",
+              "value": 1000000,
+              "type": "number"
+            },
+            {
+              "id": "3b389a25-5c9c-4253-bb1c-63a25ebb892a",
+              "name": "ID_Ads",
+              "value": "1036361418710293",
+              "type": "string"
+            },
+            {
+              "id": "2bdfd254-b79e-461b-bc1b-70e151024d10",
+              "name": "Bao_Nhieu_Nhom_Tot",
+              "value": 1,
+              "type": "number"
+            },
+            {
+              "id": "6454eca5-407b-426b-a213-5f0dffebd5c3",
+              "name": "Ty_Gia",
+              "value": 1,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        1136
+      ],
+      "id": "92af6571-1c56-4d96-bd93-d7a941c5fd4f",
+      "name": "Thông Số Đầu Vào"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f06248d3-79e8-4c06-9c27-e1f1a1a7116a",
+              "name": "Nguong_Tren",
+              "value": "={{ $json.Cam_Chi_Tieu_Nguong_Tren / $json.Ty_Gia }}",
+              "type": "number"
+            },
+            {
+              "id": "5edf6042-b206-4323-9a38-7b1b059548a0",
+              "name": "Nguong_Duoi",
+              "value": "={{ $json.Cam_Chi_Tieu_Nguong_Duoi / $json.Ty_Gia }}",
+              "type": "number"
+            },
+            {
+              "id": "d2749306-3ae1-43a5-be23-789910643ef4",
+              "name": "Nguong_CPA",
+              "value": "={{ $json.Nguong_CPA / $json.Ty_Gia }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1984,
+        1136
+      ],
+      "id": "4142267b-dbfd-4984-a7fd-7a2ae325fb4d",
+      "name": "Quy Đổi Theo Tỷ Suất"
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v24.0/act_{{ $('Thông Số Đầu Vào').first().json.ID_Ads }}/adsets",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,name,status,daily_budget,insights.date_preset(maximum){spend,actions},campaign{id,name,status},ads{id,name,creative{effective_object_story_id}}"
+            },
+            {
+              "name": "limit",
+              "value": "1000"
+            },
+            {
+              "name": "filtering",
+              "value": "=[{\"field\":\"spend\",\"operator\":\"GREATER_THAN_OR_EQUAL\",\"value\":{{ $json.Nguong_Duoi }}},{\"field\":\"spend\",\"operator\":\"LESS_THAN_OR_EQUAL\",\"value\":{{ $json.Nguong_Tren }}}]"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('Thông Số Đầu Vào').first().json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72df47b7-59f6-4183-9791-895a9c67d4cc",
+      "name": "Lấy dữ liệu Nhóm",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2208,
+        1136
+      ],
+      "notesInFlow": true,
+      "notes": "Thay YOUR_TOKEN và ID tài khoản QC"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2432,
+        1136
+      ],
+      "id": "fab5efd9-c751-4d2b-8ad3-06aaeb6266e9",
+      "name": "Split Out Adsets"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "filter-active-campaign",
+              "leftValue": "={{ $json.campaign.status }}",
+              "rightValue": "ACTIVE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2656,
+        1136
+      ],
+      "id": "303931c2-978b-43ff-9493-f62190ab87b5",
+      "name": "Lọc Campaigns Active"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "from datetime import datetime\n\n# CẤU HÌNH\nTY_GIA = _('Thông Số Đầu Vào').first().json.Ty_Gia\nNGUONG_CPA = _('Quy Đổi Theo Tỷ Suất').first().json.Nguong_CPA\nCOMMENT_KEYS = ['comment']\nMESSAGING_KEYS = ['onsite_conversion.messaging_first_reply']\n\n# Hàm tính CPA\ndef calc_cpa(spend, actions):\n    total = sum(int(a.get('value', 0)) for a in (actions or []) if a.get('action_type') in COMMENT_KEYS + MESSAGING_KEYS)\n    return (spend * TY_GIA) / total if total > 0 else (999999 if spend > 0 else 0)\n\n# Hàm lấy insights\ndef get_insights(obj):\n    return obj.get('insights', {}).get('data', [None])[0] if obj.get('insights', {}).get('data') else None\n\n# Hàm lấy post_id\ndef get_post_id(adset):\n    ads = adset.get('ads', {}).get('data', [])\n    if not ads:\n        return 'No Post ID Found'\n    creative = ads[0].get('creative', {})\n    return creative.get('effective_object_story_id') or creative.get('object_story_id') or ads[0].get('id', 'No Post ID Found')\n\n# Xử lý từng item (mỗi item là một adset đã được lọc campaigns ACTIVE)\nresult = []\n\nfor item in items:\n    if not item or not item.get('json'):\n        continue\n    \n    adset = item['json']\n    campaign = adset.get('campaign', {})\n    \n    # Chỉ xử lý campaign đang ACTIVE (đã được lọc ở node trước)\n    if campaign.get('status') != 'ACTIVE':\n        continue\n    \n    # Chỉ bật những adset đang PAUSED\n    if adset.get('status') != 'PAUSED':\n        continue\n    \n    insights = get_insights(adset)\n    if not insights:\n        continue\n    \n    spend = float(insights.get('spend', 0) or 0)\n    cpa = calc_cpa(spend, insights.get('actions'))\n    \n    # Nếu CPA tốt (<= NGUONG_CPA) thì trả về để bật\n    if cpa <= NGUONG_CPA:\n        data = {\n            'adset_id': adset.get('id'),\n            'adset_name': adset.get('name'),\n            'campaign_id': campaign.get('id'),\n            'campaign_name': campaign.get('name'),\n            'status': adset.get('status'),\n            'cpa': cpa,\n            'post_id': get_post_id(adset),\n            'reason': f'Bật lại adset: CPA tốt (CPA = {cpa} <= {NGUONG_CPA})',\n            'timestamp': datetime.now().isoformat()\n        }\n        result.append({'json': data})\n\nreturn result"
+      },
+      "id": "f93367bb-5d1b-4e2d-b022-25123a553ca2",
+      "name": "Phân Loại & Xử Lý Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v24.0/{{ $json.adset_id }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('Thông Số Đầu Vào').first().json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "26b215de-6e87-49eb-ae23-936b93819ada",
+      "name": "Bật nhom",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        3168,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Các nhóm mà AI đã tắt nếu 1h hoặc 2h sau mà chi phí/khách < Nguong_CPA thì bật lại (chỉ với campaign đang ACTIVE)",
+        "height": 528,
+        "width": 2192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        880
+      ],
+      "id": "7c7317a1-7fe8-49c4-a653-6c0c7d5bded5",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Thông Số Đầu Vào",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thông Số Đầu Vào": {
+      "main": [
+        [
+          {
+            "node": "Quy Đổi Theo Tỷ Suất",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quy Đổi Theo Tỷ Suất": {
+      "main": [
+        [
+          {
+            "node": "Lấy dữ liệu Nhóm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy dữ liệu Nhóm": {
+      "main": [
+        [
+          {
+            "node": "Split Out Adsets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Adsets": {
+      "main": [
+        [
+          {
+            "node": "Lọc Campaigns Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lọc Campaigns Active": {
+      "main": [
+        [
+          {
+            "node": "Phân Loại & Xử Lý Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phân Loại & Xử Lý Logic": {
+      "main": [
+        [
+          {
+            "node": "Bật nhom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "95a5f85f-3613-47cb-b2fc-4fd4aa3ac605",
+  "meta": {
+    "instanceId": "8ae9064574590f4bef62fe6c8cafaae52a5a90dd40cb184103af1049753a2d5d"
+  },
+  "id": "5zH0qQw8jrNKM7zD",
+  "tags": []
+}
