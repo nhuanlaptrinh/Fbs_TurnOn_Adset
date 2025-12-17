@@ -6,8 +6,8 @@
         "rule": {
           "interval": [
             {
-              "field": "hours",
-              "triggerAtMinute": 30
+              "field": "minutes",
+              "minutesInterval": 15
             }
           ]
         }
@@ -15,10 +15,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        1536,
-        1136
+        192,
+        256
       ],
-      "id": "7066d257-24cd-404b-9527-ef133a5cdbe6",
+      "id": "5161be35-5ecd-414c-846d-449825100787",
       "name": "Schedule Trigger"
     },
     {
@@ -28,7 +28,7 @@
             {
               "id": "3acae58a-6d3c-4db5-a1aa-edf9cd88181b",
               "name": "access_token",
-              "value": "EAATostwKkxMBQKqLOPRtu9S0G1mw2e0qk6buF1ABoBN55kZCPIakYokDJI2eAWJvFzzWXYZCTZBbAAosCyp2fOTbmQHOM62Mt1TcqTiHzmk96s6x9KZBEqwFvnzZC4J2roZC3ziZAoOZAMbV4LBhnC1Ol3miZBYlfl75a47XwNgV0v6NBXnCiUQEK7hXWDPD06ypWvaCZBNQGjzSFUY87sTr9K",
+              "value": "EAATostwKkxMBQCfStbhkx6Jgdi0DrXO8FZCB32JHhAizaN0O7pZAEZCay2BoMZAYCUZBiqJeoCAj5LScxx2cL1duf8ZCQRT5HIyBnPTCDGpFPiaDABMABgCuaF2eG71rCMSZCskRpF1N60ZCDOWmZCBZAUbeTbeAVlJM1tLj75M4dAlMUia3PmbrrkeeH52R9sXmMMH0VJjBEq2fUz4LIinIYA",
               "type": "string"
             },
             {
@@ -74,10 +74,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1760,
-        1136
+        416,
+        256
       ],
-      "id": "92af6571-1c56-4d96-bd93-d7a941c5fd4f",
+      "id": "d6f53304-bf84-4db1-acdc-b770885e137e",
       "name": "Thông Số Đầu Vào"
     },
     {
@@ -109,10 +109,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1984,
-        1136
+        640,
+        256
       ],
-      "id": "4142267b-dbfd-4984-a7fd-7a2ae325fb4d",
+      "id": "3eeb9631-31a7-4174-b29c-8275e6a83ba3",
       "name": "Quy Đổi Theo Tỷ Suất"
     },
     {
@@ -141,13 +141,13 @@
         },
         "options": {}
       },
-      "id": "72df47b7-59f6-4183-9791-895a9c67d4cc",
+      "id": "39a0b3d7-1ee1-43f4-8422-d45bfc04afa3",
       "name": "Lấy dữ liệu Nhóm",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        2208,
-        1136
+        864,
+        256
       ],
       "notesInFlow": true,
       "notes": "Thay YOUR_TOKEN và ID tài khoản QC"
@@ -160,10 +160,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        2432,
-        1136
+        1088,
+        256
       ],
-      "id": "fab5efd9-c751-4d2b-8ad3-06aaeb6266e9",
+      "id": "5f394420-d61d-495c-8b0b-2d989f099abe",
       "name": "Split Out Adsets"
     },
     {
@@ -193,10 +193,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2656,
-        1136
+        1312,
+        256
       ],
-      "id": "303931c2-978b-43ff-9493-f62190ab87b5",
+      "id": "2015a1a0-5179-4cad-8d11-09ac280c578d",
       "name": "Lọc Campaigns Active"
     },
     {
@@ -204,13 +204,13 @@
         "language": "python",
         "pythonCode": "from datetime import datetime\n\n# CẤU HÌNH\nTY_GIA = _('Thông Số Đầu Vào').first().json.Ty_Gia\nNGUONG_CPA = _('Quy Đổi Theo Tỷ Suất').first().json.Nguong_CPA\nCOMMENT_KEYS = ['comment']\nMESSAGING_KEYS = ['onsite_conversion.messaging_first_reply']\n\n# Hàm tính CPA\ndef calc_cpa(spend, actions):\n    total = sum(int(a.get('value', 0)) for a in (actions or []) if a.get('action_type') in COMMENT_KEYS + MESSAGING_KEYS)\n    return (spend * TY_GIA) / total if total > 0 else (999999 if spend > 0 else 0)\n\n# Hàm lấy insights\ndef get_insights(obj):\n    return obj.get('insights', {}).get('data', [None])[0] if obj.get('insights', {}).get('data') else None\n\n# Hàm lấy post_id\ndef get_post_id(adset):\n    ads = adset.get('ads', {}).get('data', [])\n    if not ads:\n        return 'No Post ID Found'\n    creative = ads[0].get('creative', {})\n    return creative.get('effective_object_story_id') or creative.get('object_story_id') or ads[0].get('id', 'No Post ID Found')\n\n# Xử lý từng item (mỗi item là một adset đã được lọc campaigns ACTIVE)\nresult = []\n\nfor item in items:\n    if not item or not item.get('json'):\n        continue\n    \n    adset = item['json']\n    campaign = adset.get('campaign', {})\n    \n    # Chỉ xử lý campaign đang ACTIVE (đã được lọc ở node trước)\n    if campaign.get('status') != 'ACTIVE':\n        continue\n    \n    # Chỉ bật những adset đang PAUSED\n    if adset.get('status') != 'PAUSED':\n        continue\n    \n    insights = get_insights(adset)\n    if not insights:\n        continue\n    \n    spend = float(insights.get('spend', 0) or 0)\n    cpa = calc_cpa(spend, insights.get('actions'))\n    \n    # Nếu CPA tốt (<= NGUONG_CPA) thì trả về để bật\n    if cpa <= NGUONG_CPA:\n        data = {\n            'adset_id': adset.get('id'),\n            'adset_name': adset.get('name'),\n            'campaign_id': campaign.get('id'),\n            'campaign_name': campaign.get('name'),\n            'status': adset.get('status'),\n            'cpa': cpa,\n            'post_id': get_post_id(adset),\n            'reason': f'Bật lại adset: CPA tốt (CPA = {cpa} <= {NGUONG_CPA})',\n            'timestamp': datetime.now().isoformat()\n        }\n        result.append({'json': data})\n\nreturn result"
       },
-      "id": "f93367bb-5d1b-4e2d-b022-25123a553ca2",
+      "id": "aa120178-3201-42f9-8502-debb2c27e7d7",
       "name": "Phân Loại & Xử Lý Logic",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2880,
-        1136
+        1536,
+        256
       ]
     },
     {
@@ -232,13 +232,13 @@
         },
         "options": {}
       },
-      "id": "26b215de-6e87-49eb-ae23-936b93819ada",
+      "id": "3f887aad-64e8-4132-8c69-4bca1c04f085",
       "name": "Bật nhom",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        3168,
-        1136
+        1824,
+        256
       ]
     },
     {
@@ -250,10 +250,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1344,
-        880
+        0,
+        0
       ],
-      "id": "7c7317a1-7fe8-49c4-a653-6c0c7d5bded5",
+      "id": "cf1fddb1-fd5c-4663-88ba-9ed5b389b7d2",
       "name": "Sticky Note"
     }
   ],
@@ -341,10 +341,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "95a5f85f-3613-47cb-b2fc-4fd4aa3ac605",
+  "versionId": "6c73b9d3-0879-4d16-9bd7-2a3034222dc8",
   "meta": {
     "instanceId": "8ae9064574590f4bef62fe6c8cafaae52a5a90dd40cb184103af1049753a2d5d"
   },
-  "id": "5zH0qQw8jrNKM7zD",
+  "id": "izxcvZk4HTqgNZKX",
   "tags": []
 }
