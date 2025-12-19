@@ -18,7 +18,7 @@
         192,
         256
       ],
-      "id": "5161be35-5ecd-414c-846d-449825100787",
+      "id": "916e1cad-c226-47d8-8b1a-eabe016c35a4",
       "name": "Schedule Trigger"
     },
     {
@@ -28,7 +28,7 @@
             {
               "id": "3acae58a-6d3c-4db5-a1aa-edf9cd88181b",
               "name": "access_token",
-              "value": "EAATostwKkxMBQCfStbhkx6Jgdi0DrXO8FZCB32JHhAizaN0O7pZAEZCay2BoMZAYCUZBiqJeoCAj5LScxx2cL1duf8ZCQRT5HIyBnPTCDGpFPiaDABMABgCuaF2eG71rCMSZCskRpF1N60ZCDOWmZCBZAUbeTbeAVlJM1tLj75M4dAlMUia3PmbrrkeeH52R9sXmMMH0VJjBEq2fUz4LIinIYA",
+              "value": "",
               "type": "string"
             },
             {
@@ -77,7 +77,7 @@
         416,
         256
       ],
-      "id": "d6f53304-bf84-4db1-acdc-b770885e137e",
+      "id": "bbf91a3a-6d64-41aa-b744-da5b5a59cc7e",
       "name": "Thông Số Đầu Vào"
     },
     {
@@ -112,7 +112,7 @@
         640,
         256
       ],
-      "id": "3eeb9631-31a7-4174-b29c-8275e6a83ba3",
+      "id": "45e47b30-3037-4ca5-b7da-c0265b449271",
       "name": "Quy Đổi Theo Tỷ Suất"
     },
     {
@@ -141,7 +141,7 @@
         },
         "options": {}
       },
-      "id": "39a0b3d7-1ee1-43f4-8422-d45bfc04afa3",
+      "id": "3163dd8a-655b-4d2e-bffe-4091184332a3",
       "name": "Lấy dữ liệu Nhóm",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
@@ -163,7 +163,7 @@
         1088,
         256
       ],
-      "id": "5f394420-d61d-495c-8b0b-2d989f099abe",
+      "id": "bee794c7-e6d5-403e-b719-f23517e9901d",
       "name": "Split Out Adsets"
     },
     {
@@ -196,22 +196,146 @@
         1312,
         256
       ],
-      "id": "2015a1a0-5179-4cad-8d11-09ac280c578d",
+      "id": "3a2182ba-e268-4bf2-a62d-a71cd6c7a2d1",
       "name": "Lọc Campaigns Active"
     },
     {
       "parameters": {
-        "language": "python",
-        "pythonCode": "from datetime import datetime\n\n# CẤU HÌNH\nTY_GIA = _('Thông Số Đầu Vào').first().json.Ty_Gia\nNGUONG_CPA = _('Quy Đổi Theo Tỷ Suất').first().json.Nguong_CPA\nCOMMENT_KEYS = ['comment']\nMESSAGING_KEYS = ['onsite_conversion.messaging_first_reply']\n\n# Hàm tính CPA\ndef calc_cpa(spend, actions):\n    total = sum(int(a.get('value', 0)) for a in (actions or []) if a.get('action_type') in COMMENT_KEYS + MESSAGING_KEYS)\n    return (spend * TY_GIA) / total if total > 0 else (999999 if spend > 0 else 0)\n\n# Hàm lấy insights\ndef get_insights(obj):\n    return obj.get('insights', {}).get('data', [None])[0] if obj.get('insights', {}).get('data') else None\n\n# Hàm lấy post_id\ndef get_post_id(adset):\n    ads = adset.get('ads', {}).get('data', [])\n    if not ads:\n        return 'No Post ID Found'\n    creative = ads[0].get('creative', {})\n    return creative.get('effective_object_story_id') or creative.get('object_story_id') or ads[0].get('id', 'No Post ID Found')\n\n# Xử lý từng item (mỗi item là một adset đã được lọc campaigns ACTIVE)\nresult = []\n\nfor item in items:\n    if not item or not item.get('json'):\n        continue\n    \n    adset = item['json']\n    campaign = adset.get('campaign', {})\n    \n    # Chỉ xử lý campaign đang ACTIVE (đã được lọc ở node trước)\n    if campaign.get('status') != 'ACTIVE':\n        continue\n    \n    # Chỉ bật những adset đang PAUSED\n    if adset.get('status') != 'PAUSED':\n        continue\n    \n    insights = get_insights(adset)\n    if not insights:\n        continue\n    \n    spend = float(insights.get('spend', 0) or 0)\n    cpa = calc_cpa(spend, insights.get('actions'))\n    \n    # Nếu CPA tốt (<= NGUONG_CPA) thì trả về để bật\n    if cpa <= NGUONG_CPA:\n        data = {\n            'adset_id': adset.get('id'),\n            'adset_name': adset.get('name'),\n            'campaign_id': campaign.get('id'),\n            'campaign_name': campaign.get('name'),\n            'status': adset.get('status'),\n            'cpa': cpa,\n            'post_id': get_post_id(adset),\n            'reason': f'Bật lại adset: CPA tốt (CPA = {cpa} <= {NGUONG_CPA})',\n            'timestamp': datetime.now().isoformat()\n        }\n        result.append({'json': data})\n\nreturn result"
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "filter-paused-adset",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "PAUSED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "id": "aa120178-3201-42f9-8502-debb2c27e7d7",
-      "name": "Phân Loại & Xử Lý Logic",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
       "position": [
         1536,
         256
-      ]
+      ],
+      "id": "e3fbf2a5-9353-483e-b3dc-e5637bc6162d",
+      "name": "Lọc Adsets PAUSED"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy thông số\nconst tyGia = $('Thông Số Đầu Vào').first().json.Ty_Gia;\nconst nguongCPA = $('Quy Đổi Theo Tỷ Suất').first().json.Nguong_CPA;\n\n// Xử lý item hiện tại (n8n sẽ tự động loop qua từng item từ Split Out)\nconst item = items[0];\nif (!item || !item.json) {\n  return [];\n}\n\n// Lấy insights\nconst insights = item.json.insights?.data?.[0] || null;\nif (!insights) {\n  return [];\n}\n\n// Tính tổng actions (comment + messaging)\nconst actions = insights.actions || [];\nlet totalActions = 0;\nfor (const action of actions) {\n  if (action.action_type === 'comment' || action.action_type === 'onsite_conversion.messaging_first_reply') {\n    totalActions += parseInt(action.value || 0);\n  }\n}\n\n// Tính CPA\nconst spend = parseFloat(insights.spend || 0);\nconst cpa = totalActions > 0 ? (spend * tyGia) / totalActions : (spend > 0 ? 999999 : 0);\n\n// Lấy post_id\nconst ads = item.json.ads?.data || [];\nlet postId = 'No Post ID Found';\nif (ads.length > 0) {\n  const creative = ads[0].creative || {};\n  postId = creative.effective_object_story_id || creative.object_story_id || ads[0].id || 'No Post ID Found';\n}\n\nreturn [{\n  json: {\n    ...item.json,\n    calculated_cpa: cpa,\n    post_id: postId,\n    total_actions: totalActions,\n    spend: spend\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        112
+      ],
+      "id": "91f9b02d-d91f-4823-a6be-5403c35b3f68",
+      "name": "Tính CPA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-cpa",
+              "leftValue": "={{ $json.calculated_cpa }}",
+              "rightValue": "={{ $('Quy Đổi Theo Tỷ Suất').first().json.Nguong_CPA }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        184
+      ],
+      "id": "aac4a85d-4497-413f-a4d7-b2261a506c9c",
+      "name": "Kiểm tra CPA <= Ngưỡng"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "adset-id",
+              "name": "adset_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "adset-name",
+              "name": "adset_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "campaign-id",
+              "name": "campaign_id",
+              "value": "={{ $json.campaign.id }}",
+              "type": "string"
+            },
+            {
+              "id": "campaign-name",
+              "name": "campaign_name",
+              "value": "={{ $json.campaign.name }}",
+              "type": "string"
+            },
+            {
+              "id": "cpa-value",
+              "name": "cpa",
+              "value": "={{ $json.calculated_cpa }}",
+              "type": "number"
+            },
+            {
+              "id": "post-id",
+              "name": "post_id",
+              "value": "={{ $json.post_id }}",
+              "type": "string"
+            },
+            {
+              "id": "reason",
+              "name": "reason",
+              "value": "={{ 'Bật lại adset: CPA tốt (CPA = ' + $json.calculated_cpa + ' <= ' + $('Quy Đổi Theo Tỷ Suất').first().json.Nguong_CPA + ')' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2432,
+        184
+      ],
+      "id": "d16ee5bd-0f63-4a62-9578-8bf1a5270310",
+      "name": "Chuẩn bị dữ liệu"
     },
     {
       "parameters": {
@@ -232,12 +356,12 @@
         },
         "options": {}
       },
-      "id": "3f887aad-64e8-4132-8c69-4bca1c04f085",
+      "id": "b5dfaf66-2128-41e8-b6d1-1ec502714aea",
       "name": "Bật nhom",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        1824,
+        2656,
         256
       ]
     },
@@ -245,16 +369,29 @@
       "parameters": {
         "content": "## Các nhóm mà AI đã tắt nếu 1h hoặc 2h sau mà chi phí/khách < Nguong_CPA thì bật lại (chỉ với campaign đang ACTIVE)",
         "height": 528,
-        "width": 2192
+        "width": 2896
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        0
+        -16,
+        16
       ],
-      "id": "cf1fddb1-fd5c-4663-88ba-9ed5b389b7d2",
+      "id": "90ab39f9-94bf-461f-aef4-e5b804ff3c20",
       "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1760,
+        256
+      ],
+      "id": "1447431d-f117-4823-a921-e8071bc067e2",
+      "name": "Loop Over Items"
     }
   ],
   "pinData": {},
@@ -318,18 +455,81 @@
       "main": [
         [
           {
-            "node": "Phân Loại & Xử Lý Logic",
+            "node": "Lọc Adsets PAUSED",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Phân Loại & Xử Lý Logic": {
+    "Lọc Adsets PAUSED": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tính CPA": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra CPA <= Ngưỡng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra CPA <= Ngưỡng": {
+      "main": [
+        [
+          {
+            "node": "Chuẩn bị dữ liệu",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuẩn bị dữ liệu": {
       "main": [
         [
           {
             "node": "Bật nhom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Tính CPA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bật nhom": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
             "type": "main",
             "index": 0
           }
@@ -341,10 +541,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "6c73b9d3-0879-4d16-9bd7-2a3034222dc8",
+  "versionId": "6d33a160-d8fa-4a2f-a33d-134c55fcadd1",
   "meta": {
     "instanceId": "8ae9064574590f4bef62fe6c8cafaae52a5a90dd40cb184103af1049753a2d5d"
   },
-  "id": "izxcvZk4HTqgNZKX",
+  "id": "Nmt2QvqYA0MrY81L",
   "tags": []
 }
